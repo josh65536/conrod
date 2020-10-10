@@ -148,16 +148,23 @@ macro_rules! v021_convert_mouse_button {
     }};
 }
 
-/// A macro for converting a `winit::WindowEvent` to a `Option<conrod_core::event::Input>`.
-///
-/// Expects a `winit::WindowEvent` and a reference to a window implementing `WinitWindow`.
-/// Returns an `Option<conrod_core::event::Input>`.
 #[macro_export]
 macro_rules! v021_convert_window_event {
     ($event:expr, $window:expr) => {{
         // The window size in points.
         let scale_factor: f64 = $window.scale_factor();
-        let (win_w, win_h): (f64, f64) = $window.inner_size().to_logical::<f64>(scale_factor).into();
+        $crate::v021_convert_window_event_wh!($event, $window.inner_size(), scale_factor)
+    }}
+}
+
+/// A macro for converting a `winit::WindowEvent` to a `Option<conrod_core::event::Input>`.
+///
+/// Expects a `winit::WindowEvent` and a reference to a window implementing `WinitWindow`.
+/// Returns an `Option<conrod_core::event::Input>`.
+#[macro_export]
+macro_rules! v021_convert_window_event_wh {
+    ($event:expr, $size:expr, $scale:expr) => {{
+        let (win_w, win_h): (f64, f64) = $size.to_logical::<f64>($scale).into();
 
         // Translate the coordinates from top-left-origin-with-y-down to centre-origin-with-y-up.
         let tx = |x: conrod_core::Scalar| x - win_w / 2.0;
@@ -169,7 +176,7 @@ macro_rules! v021_convert_window_event {
 
         match $event {
             winit::event::WindowEvent::Resized(physical_size) => {
-                let winit::dpi::LogicalSize { width, height } = physical_size.to_logical(scale_factor);
+                let winit::dpi::LogicalSize { width, height } = physical_size.to_logical($scale);
                 Some(conrod_core::event::Input::Resize(width, height).into())
             },
 
@@ -200,7 +207,7 @@ macro_rules! v021_convert_window_event {
             },
 
             winit::event::WindowEvent::Touch(winit::event::Touch { phase, location, id, .. }) => {
-                let winit::dpi::LogicalPosition { x, y } = location.to_logical::<f64>(scale_factor);
+                let winit::dpi::LogicalPosition { x, y } = location.to_logical::<f64>($scale);
                 let phase = match phase {
                     winit::event::TouchPhase::Started => conrod_core::input::touch::Phase::Start,
                     winit::event::TouchPhase::Moved => conrod_core::input::touch::Phase::Move,
@@ -214,7 +221,7 @@ macro_rules! v021_convert_window_event {
             }
 
             winit::event::WindowEvent::CursorMoved { position, .. } => {
-                let winit::dpi::LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor);
+                let winit::dpi::LogicalPosition { x, y } = position.to_logical::<f64>($scale);
                 let x = tx(x as conrod_core::Scalar);
                 let y = ty(y as conrod_core::Scalar);
                 let motion = conrod_core::input::Motion::MouseCursor { x: x, y: y };
@@ -263,6 +270,24 @@ macro_rules! v021_convert_event {
     ($event:expr, $window:expr) => {{
         match $event {
             winit::event::Event::WindowEvent { event, .. } => $crate::v021_convert_window_event!(event, $window),
+            _ => None,
+        }
+    }};
+}
+
+/// A macro for converting a `winit::Event` to a `conrod_core::event::Input`.
+///
+/// Expects a `winit::Event` and a logical size of type `winit::dpi::LogicalSize`,
+/// and a scale factor.
+/// Returns an `Option<conrod_core::event::Input>`.
+///
+/// Invocations of this macro require that a version of the `winit` and `conrod_core` crates are
+/// available in the crate root.
+#[macro_export]
+macro_rules! v021_convert_event_wh {
+    ($event:expr, $size:expr, $scale:expr) => {{
+        match $event {
+            winit::event::Event::WindowEvent { event, .. } => $crate::v021_convert_window_event_wh!(event, $size, $scale),
             _ => None,
         }
     }};

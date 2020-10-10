@@ -432,7 +432,7 @@ impl Display for glium::Display {
     }
 
     fn hidpi_factor(&self) -> f64 {
-        self.gl_window().get_hidpi_factor()
+        self.gl_window().window().scale_factor()
     }
 }
 
@@ -930,6 +930,7 @@ impl From<glium::program::ProgramChooserCreationError> for RendererCreationError
     }
 }
 
+#[allow(deprecated)]
 impl std::error::Error for RendererCreationError {
     fn description(&self) -> &str {
         match *self {
@@ -960,6 +961,7 @@ impl From<glium::DrawError> for DrawError {
     }
 }
 
+#[allow(deprecated)]
 impl std::error::Error for DrawError {
     fn description(&self) -> &str {
         match *self {

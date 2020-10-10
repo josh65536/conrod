@@ -112,8 +112,16 @@ pub enum ImageColor {
     None,
 }
 
+/// The type of interaction with the button.
 #[derive(Copy, Clone)]
-enum Interaction { Idle, Hover, Press }
+pub enum Interaction { 
+    /// No interaction
+    Idle,
+    /// Hovering over the button
+    Hover,
+    /// Pressing the button
+    Press
+}
 
 /// The `Event` type yielded by the `Button` widget.
 ///
@@ -227,7 +235,9 @@ impl<'a> Button<'a, Flat> {
 impl<'a, S> Button<'a, S> {
 
     /// Create a button context to be built upon.
-    fn new_internal(show: S) -> Self {
+    /// Made public to allow constructing buttons of custom types,
+    /// with the newtype pattern, of course
+    pub fn new_internal(show: S) -> Self {
         Button {
             common: widget::CommonBuilder::default(),
             show: show,
@@ -380,8 +390,8 @@ impl<'a> Widget for Button<'a, Image> {
 
 }
 
-
-fn interaction_and_times_triggered(button_id: widget::Id, ui: &UiCell) -> (Interaction, u16) {
+/// Gets the type of interaction with the button and the number of times it was clicked
+pub fn interaction_and_times_triggered(button_id: widget::Id, ui: &UiCell) -> (Interaction, u16) {
     let input = ui.widget_input(button_id);
     let interaction = input.mouse().map_or(Interaction::Idle, |mouse| {
         let is_pressed =

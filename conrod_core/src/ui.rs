@@ -898,8 +898,13 @@ impl Ui {
 
             },
 
-            Input::Focus(focused) if focused == true => self.needs_redraw(),
-            Input::Focus(_focused) => (),
+            Input::Focus(focused) if focused => self.needs_redraw(),
+            Input::Focus(focused) if !focused => {
+                self.global_input.current.modifiers.remove(
+                    ModifierKey::CTRL | ModifierKey::SHIFT | ModifierKey::ALT | ModifierKey::GUI,
+                );
+            },
+            Input::Focus(_) => unreachable!(),
 
             Input::Redraw => self.needs_redraw(),
         }
