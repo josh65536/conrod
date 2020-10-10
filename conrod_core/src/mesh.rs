@@ -5,8 +5,8 @@
 //! produce a sequence of commands describing the order in which draw commands should occur and
 //! whether or not the `Scizzor` should be updated between draws.
 
-use crate::{color, image, render};
 use crate::text::{self, rt};
+use crate::{color, image, render};
 use crate::{Rect, Scalar};
 use std::{fmt, ops};
 
@@ -200,10 +200,10 @@ impl Mesh {
 
         let rect_to_scizzor = |rect: Rect| {
             let (w, h) = rect.w_h();
-            let left = (rect.left() * dpi_factor + half_viewport_w) as i32;
-            let top = (rect.top() * dpi_factor - half_viewport_h).abs() as i32;
-            let width = (w * dpi_factor) as u32;
-            let height = (h * dpi_factor) as u32;
+            let left = (rect.left() * dpi_factor + half_viewport_w).round() as i32;
+            let top = (rect.top() * dpi_factor - half_viewport_h).round().abs() as i32;
+            let width = (w * dpi_factor).round() as u32;
+            let height = (h * dpi_factor).round() as u32;
             Scizzor {
                 top_left: [left.max(0), top.max(0)],
                 dimensions: [width.min(viewport_w as u32), height.min(viewport_h as u32)],
@@ -543,10 +543,7 @@ impl Mesh {
     /// These commands describe the order in which unique draw commands and scizzor updates should
     /// occur.
     pub fn commands(&self) -> Commands {
-        let Mesh {
-            ref commands,
-            ..
-        } = *self;
+        let Mesh { ref commands, .. } = *self;
         Commands {
             commands: commands.iter(),
         }
@@ -563,17 +560,11 @@ impl Mesh {
 impl<'a> Iterator for Commands<'a> {
     type Item = Command;
     fn next(&mut self) -> Option<Self::Item> {
-        let Commands {
-            ref mut commands,
-        } = *self;
+        let Commands { ref mut commands } = *self;
         commands.next().map(|command| match *command {
             PreparedCommand::Scizzor(scizzor) => Command::Scizzor(scizzor),
-            PreparedCommand::Plain(ref range) => {
-                Command::Draw(Draw::Plain(range.clone()))
-            }
-            PreparedCommand::Image(id, ref range) => {
-                Command::Draw(Draw::Image(id, range.clone()))
-            }
+            PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
+            PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
         })
     }
 }
