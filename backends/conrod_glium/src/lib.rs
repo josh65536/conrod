@@ -846,7 +846,7 @@ impl Renderer {
                         // - bottom to top: 0.0 to 1.0
                         let (uv_l, uv_r, uv_b, uv_t) = match source_rect {
                             Some(src_rect) => {
-                                let (l, r, b, t) = src_rect.l_r_b_t();
+                                let (l, r, b, t) = src_rect.l_r_b_t_directed();
                                 (
                                     (l / image_w) as f32,
                                     (r / image_w) as f32,
@@ -871,7 +871,7 @@ impl Renderer {
 
                         let mut push_v = |x, y, t| vertices.push(v(x, y, t));
 
-                        let (l, r, b, t) = rect.l_r_b_t();
+                        let (l, r, b, t) = rect.l_r_b_t_directed();
 
                         // Bottom left triangle.
                         push_v(l, t, [uv_l, uv_t]);

@@ -175,6 +175,13 @@ impl Rect {
         (self.left(), self.right(), self.bottom(), self.top())
     }
 
+    /// The edges of the **Rect** in a tuple (top, bottom, left, right),
+    /// but the ranges stay directed. So if the start x is greater than the end x,
+    /// then the left is more right than the right
+    pub fn l_r_b_t_directed(&self) -> (Scalar, Scalar, Scalar, Scalar) {
+        (self.x.start, self.x.end, self.y.start, self.y.end)
+    }
+
     /// The left and top edges of the **Rect** along with the width and height.
     pub fn l_t_w_h(&self) -> (Scalar, Scalar, Scalar, Scalar) {
         let (w, h) = self.w_h();
