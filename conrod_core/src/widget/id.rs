@@ -3,7 +3,8 @@
 
 use daggy;
 use graph::Graph;
-use std;
+use std::slice::Iter;
+use std::ops::Index;
 
 /// Unique widget identifier.
 ///
@@ -25,8 +26,10 @@ pub struct Generator<'a> {
 }
 
 /// A list of lazily generated `widget::Id`s.
+/// Ids are never deleted so they can be reused
+/// if the number decreases then increases again.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct List(Vec<Id>);
+pub struct List(Vec<Id>, usize);
 /// An iterator-like type for producing indices from a `List`.
 #[allow(missing_copy_implementations)]
 pub struct ListWalk {
@@ -57,7 +60,7 @@ impl<'a> Generator<'a> {
 impl List {
     /// Construct a cache for multiple indices.
     pub fn new() -> Self {
-        List(Vec::new())
+        List(Vec::new(), 0)
     }
 
     /// Produce a walker for producing the `List`'s indices.
@@ -65,33 +68,69 @@ impl List {
         ListWalk { i: 0 }
     }
 
+    /// Length of list
+    pub fn len(&self) -> usize {
+        self.1
+    }
+
+    /// Iterates over ids
+    pub fn iter(&self) -> Iter<Id> {
+        self.0.iter()
+    }
+
+    /// Gets the id at a specific index.
+    /// Returns None if the index is bigger than the list size.
+    pub fn get(&self, index: usize) -> Option<&Id> {
+        if index < self.1 { self.0.get(index) } else { None }
+    }
+
+    /// Clears the list. Note that ids are not dropped for good, but stored
+    /// for when the list grows again.
+    pub fn clear(&mut self) {
+        self.1 = 0;
+    }
+
+    /// Pushes an id onto the list.
+    /// A new id is generated if the list ran out of stored ids.
+    pub fn push(&mut self, id_generator: &mut Generator) -> Id {
+        if self.0.len() == self.1 {
+            let next = id_generator.next();
+            self.0.push(next);
+            self.1 += 1;
+            next
+        } else {
+            self.1 += 1;
+            self.0[self.1 - 1]
+        }
+    }
+
     /// Resizes the `List`'s inner `Vec` to the given target length, using the given `UiCell` to
     /// generate new unique `widget::Id`s if necessary.
     pub fn resize(&mut self, target_len: usize, id_generator: &mut Generator) {
-        if self.len() < target_len {
+        if self.0.len() < target_len {
             self.0.reserve(target_len);
-            while self.len() < target_len {
+            while self.0.len() < target_len {
                 self.0.push(id_generator.next());
             }
         }
-        while self.len() > target_len {
-            self.0.pop();
-        }
+        self.1 = target_len;
     }
 }
 
-impl std::ops::Deref for List {
-    type Target = [Id];
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl Index<usize> for List {
+    type Output = Id;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
     }
 }
 
 impl ListWalk {
     /// Yield the next index, generating one if it does not yet exist.
-    pub fn next(&mut self, &mut List(ref mut ids): &mut List, id_gen: &mut Generator) -> Id {
+    pub fn next(&mut self, &mut List(ref mut ids, ref mut size): &mut List, id_gen: &mut Generator) -> Id {
         while self.i >= ids.len() {
             ids.push(id_gen.next());
+            *size += 1;
         }
         let ix = ids[self.i];
         self.i += 1;
