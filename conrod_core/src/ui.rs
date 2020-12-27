@@ -1289,6 +1289,11 @@ impl<'a> UiCell<'a> {
         &self.ui.theme
     }
 
+    /// A mutable reference to the `Theme` that is currently active within the `Ui`.
+    pub fn theme_mut(&mut self) -> &mut Theme {
+        &mut self.ui.theme
+    }
+
     /// A convenience method for borrowing the `Font` for the given `Id` if it exists.
     pub fn font(&self, id: text::font::Id) -> Option<&text::Font> {
         self.ui.fonts.get(id)
