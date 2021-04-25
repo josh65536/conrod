@@ -16,7 +16,7 @@ path = "./src/lib.rs"
 
 [dependencies]
 conrod_core = { path = "../../conrod_core", version = "0.71" }
-glium = "0.28"
+glium = { git = "https://github.com/josh65536/glium" }
 
 [dev-dependencies]
 conrod_example_shared = { path = "../conrod_example_shared", version = "0.71" }
